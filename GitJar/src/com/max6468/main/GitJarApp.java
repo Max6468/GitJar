@@ -102,30 +102,50 @@ public class GitJarApp extends JFrame {
     private void executeGitCommand(String command, int folderIndex) {
         String folderPath = folderPaths.get(folderIndex);
         try {
-            ProcessBuilder pb = new ProcessBuilder("git", command);
-            pb.directory(new File(folderPath));
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                final String logLine = line;
-                SwingUtilities.invokeLater(() -> {
-                    logArea.append(logLine + "\n");
-                    logArea.setCaretPosition(logArea.getDocument().getLength());
-                });
-            }
-            int exitCode = process.waitFor();
+
+            runGitCommand(folderPath, "add", ".");
+
+
+            runGitCommand(folderPath, "commit", "-m", "[AutoAdd]");
+
+
+            runGitCommand(folderPath, command);
+
             SwingUtilities.invokeLater(() -> {
-                logArea.append("Git " + command + " en " + folderPath + " completado. Código de salida: " + exitCode + "\n");
+                logArea.append("Operaciones git completadas en " + folderPath + "\n");
                 logArea.setCaretPosition(logArea.getDocument().getLength());
             });
         } catch (IOException | InterruptedException ex) {
             SwingUtilities.invokeLater(() -> {
-                logArea.append("Error ejecutando git " + command + " en " + folderPath + ": " + ex.getMessage() + "\n");
+                logArea.append("Error ejecutando operaciones git en " + folderPath + ": " + ex.getMessage() + "\n");
                 logArea.setCaretPosition(logArea.getDocument().getLength());
             });
         }
+    }
+
+    private void runGitCommand(String folderPath, String... command) throws IOException, InterruptedException {
+        List<String> fullCommand = new ArrayList<>();
+        fullCommand.add("git");
+        fullCommand.addAll(List.of(command));
+
+        ProcessBuilder pb = new ProcessBuilder(fullCommand);
+        pb.directory(new File(folderPath));
+        pb.redirectErrorStream(true);
+        Process process = pb.start();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            final String logLine = line;
+            SwingUtilities.invokeLater(() -> {
+                logArea.append(logLine + "\n");
+                logArea.setCaretPosition(logArea.getDocument().getLength());
+            });
+        }
+        int exitCode = process.waitFor();
+        SwingUtilities.invokeLater(() -> {
+            logArea.append("Git " + String.join(" ", command) + " completado. Código de salida: " + exitCode + "\n");
+            logArea.setCaretPosition(logArea.getDocument().getLength());
+        });
     }
 
     private void openFolder(int folderIndex) {
