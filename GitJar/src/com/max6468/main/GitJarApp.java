@@ -1,0 +1,143 @@
+package com.max6468.main;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class GitJarApp extends JFrame {
+    private JTextArea logArea;
+    private List<String> folderPaths;
+
+    public GitJarApp() {
+        setTitle("GitJar");
+        setSize(600, 400);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+
+        initializeFolderPaths();
+
+
+        JLabel titleLabel = new JLabel("GitJar", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        add(titleLabel, BorderLayout.NORTH);
+
+
+        JPanel centralPanel = new JPanel(new BorderLayout());
+
+
+        JPanel buttonPanel = new JPanel();
+        JButton pullAllButton = new JButton("Pull All");
+        JButton pushAllButton = new JButton("Push All");
+        JButton selectButton = new JButton("Seleccionar manualmente");
+        buttonPanel.add(pullAllButton);
+        buttonPanel.add(pushAllButton);
+        buttonPanel.add(selectButton);
+        centralPanel.add(buttonPanel, BorderLayout.NORTH);
+
+
+        logArea = new JTextArea();
+        logArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(logArea);
+        centralPanel.add(scrollPane, BorderLayout.CENTER);
+
+        add(centralPanel, BorderLayout.CENTER);
+
+
+        pullAllButton.addActionListener(e -> executeGitCommandForAll("pull"));
+        pushAllButton.addActionListener(e -> executeGitCommandForAll("push"));
+        selectButton.addActionListener(e -> openManualSelectionWindow());
+    }
+
+    private void initializeFolderPaths() {
+        folderPaths = new ArrayList<>();
+
+        folderPaths.add("C:");
+        folderPaths.add("C:");
+        folderPaths.add("C:");
+        folderPaths.add("C:");
+        folderPaths.add("C:");
+    }
+
+    private void executeGitCommandForAll(String command) {
+        ExecutorService executor = Executors.newFixedThreadPool(folderPaths.size());
+        for (int i = 0; i < folderPaths.size(); i++) {
+            final int index = i;
+            executor.submit(() -> executeGitCommand(command, index));
+        }
+        executor.shutdown();
+    }
+
+    private void openManualSelectionWindow() {
+        JFrame frame = new JFrame("Selección Manual");
+        frame.setSize(500, 300);
+        frame.setLayout(new GridLayout(5, 4));
+
+        for (int i = 0; i < folderPaths.size(); i++) {
+            final int index = i;
+            String folderPath = folderPaths.get(i);
+            JLabel folderLabel = new JLabel(new File(folderPath).getName());
+            JButton pullButton = new JButton("Pull");
+            JButton pushButton = new JButton("Push");
+            JButton openButton = new JButton("Abrir");
+
+            pullButton.addActionListener(e -> executeGitCommand("pull", index));
+            pushButton.addActionListener(e -> executeGitCommand("push", index));
+            openButton.addActionListener(e -> openFolder(index));
+
+            frame.add(folderLabel);
+            frame.add(pullButton);
+            frame.add(pushButton);
+            frame.add(openButton);
+        }
+
+        frame.setVisible(true);
+    }
+
+    private void executeGitCommand(String command, int folderIndex) {
+        String folderPath = folderPaths.get(folderIndex);
+        try {
+            ProcessBuilder pb = new ProcessBuilder("git", command);
+            pb.directory(new File(folderPath));
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                final String logLine = line;
+                SwingUtilities.invokeLater(() -> {
+                    logArea.append(logLine + "\n");
+                    logArea.setCaretPosition(logArea.getDocument().getLength());
+                });
+            }
+            int exitCode = process.waitFor();
+            SwingUtilities.invokeLater(() -> {
+                logArea.append("Git " + command + " en " + folderPath + " completado. Código de salida: " + exitCode + "\n");
+                logArea.setCaretPosition(logArea.getDocument().getLength());
+            });
+        } catch (IOException | InterruptedException ex) {
+            SwingUtilities.invokeLater(() -> {
+                logArea.append("Error ejecutando git " + command + " en " + folderPath + ": " + ex.getMessage() + "\n");
+                logArea.setCaretPosition(logArea.getDocument().getLength());
+            });
+        }
+    }
+
+    private void openFolder(int folderIndex) {
+        String folderPath = folderPaths.get(folderIndex);
+        try {
+            Desktop.getDesktop().open(new File(folderPath));
+        } catch (IOException ex) {
+            logArea.append("Error al abrir la carpeta " + folderPath + ": " + ex.getMessage() + "\n");
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new GitJarApp().setVisible(true));
+    }
+}
