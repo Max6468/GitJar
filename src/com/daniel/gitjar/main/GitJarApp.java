@@ -153,7 +153,7 @@ public class GitJarApp extends JFrame {
     private void executeGitCommand(String command, int folderIndex) {
         String folderPath = folderPaths.get(folderIndex);
         File folder = new File(folderPath);
-        String folderName = folder.getName(); 
+        String folderName = folder.getName();
 
         try {
             if (command.equals("push")) {
