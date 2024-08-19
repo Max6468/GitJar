@@ -113,6 +113,8 @@ public class GitJarApp extends JFrame {
     }
 
     private void executeGitCommandForAll(String command) {
+        logArea.setText("");
+
         ExecutorService executor = Executors.newFixedThreadPool(folderPaths.size());
         for (int i = 0; i < folderPaths.size(); i++) {
             final int index = i;
@@ -120,6 +122,7 @@ public class GitJarApp extends JFrame {
         }
         executor.shutdown();
     }
+
 
     private void openManualSelectionWindow() {
         JFrame frame = new JFrame("Selección Manual");
@@ -149,22 +152,28 @@ public class GitJarApp extends JFrame {
 
     private void executeGitCommand(String command, int folderIndex) {
         String folderPath = folderPaths.get(folderIndex);
+        File folder = new File(folderPath);
+        String folderName = folder.getName(); 
+
         try {
-            runGitCommand(folderPath, "add", ".");
-            runGitCommand(folderPath, "commit", "-m", "[AutoAdd]");
+            if (command.equals("push")) {
+                runGitCommand(folderPath, "add", ".");
+                runGitCommand(folderPath, "commit", "-m", "[AutoAdd]");
+            }
             runGitCommand(folderPath, command);
 
             SwingUtilities.invokeLater(() -> {
-                logArea.append("Operaciones git completadas en " + folderPath + "\n");
+                logArea.append("Operaciones git completadas en " + folderName + "\n");
                 logArea.setCaretPosition(logArea.getDocument().getLength());
             });
         } catch (IOException | InterruptedException ex) {
             SwingUtilities.invokeLater(() -> {
-                logArea.append("Error ejecutando operaciones git en " + folderPath + ": " + ex.getMessage() + "\n");
+                logArea.append("Error ejecutando operaciones git en " + folderName + ": " + ex.getMessage() + "\n");
                 logArea.setCaretPosition(logArea.getDocument().getLength());
             });
         }
     }
+
 
     private void runGitCommand(String folderPath, String... command) throws IOException, InterruptedException {
         List<String> fullCommand = new ArrayList<>();

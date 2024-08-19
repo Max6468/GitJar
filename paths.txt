@@ -1,5 +1,5 @@
-
-
-
-
-
+C:\Users\Max6468\Documents\CLASE\Despliegue
+C:\Users\Max6468\Documents\CLASE\EntornoServidor
+C:\Users\Max6468\Documents\CLASE\EstornoCliente
+C:\Users\Max6468\Documents\CLASE\InterfacesWeb
+C:\Users\Max6468\Documents\CLASE\ProyectoFinal
